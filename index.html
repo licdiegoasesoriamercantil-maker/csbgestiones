@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Avanzado - Análisis de Llamadas y Tipificaciones</title>
+    <title>Dashboard de Análisis de Llamadas - Reportes y Gráficas</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
             font-family: 'Segoe UI', Roboto, system-ui, 'Helvetica Neue', sans-serif;
         }
         body {
-            background: #f1f5f9;
+            background: #f0f4f8;
             margin: 0;
             padding: 24px 20px;
         }
@@ -25,6 +27,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            flex-wrap: wrap;
         }
         .sub {
             color: #2c5282;
@@ -55,9 +58,7 @@
             border: none;
             font-size: 0.9rem;
         }
-        .file-label:hover {
-            background: #0f4468;
-        }
+        .file-label:hover { background: #0f4468; }
         input[type="file"] { display: none; }
         .status {
             margin-top: 16px;
@@ -68,14 +69,10 @@
             font-size: 0.85rem;
             color: #1e3a5f;
         }
-        .status.error {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        .status.success {
-            background: #dcfce7;
-            color: #166534;
-        }
+        .status.error { background: #fee2e2; color: #991b1b; }
+        .status.success { background: #dcfce7; color: #166534; }
+        
+        /* Tabs */
         .main-tabs {
             display: flex;
             gap: 8px;
@@ -100,6 +97,8 @@
             color: white;
             box-shadow: 0 2px 8px rgba(49,130,206,0.3);
         }
+        
+        /* Sub-tabs */
         .sub-tabs {
             display: flex;
             gap: 6px;
@@ -123,13 +122,14 @@
             background: #2c5282;
             color: white;
         }
+        
+        /* Report sections */
         .report-section {
             background: white;
             border-radius: 28px;
             box-shadow: 0 12px 30px rgba(0,0,0,0.08);
             padding: 20px 24px;
             margin-bottom: 32px;
-            overflow-x: auto;
         }
         .section-header {
             display: flex;
@@ -159,27 +159,30 @@
             gap: 8px;
             align-items: center;
         }
-        .download-btn:hover {
-            background: #1e4a76;
-        }
-        .scroll-table {
+        .download-btn:hover { background: #1e4a76; }
+        
+        /* Tablas */
+        .table-wrapper {
             overflow-x: auto;
             border-radius: 16px;
+            margin-top: 16px;
+            border: 1px solid #e2e8f0;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.75rem;
-            min-width: 700px;
+            min-width: 800px;
         }
         th {
             background: #f8fafc;
             color: #1e4663;
-            padding: 10px 8px;
+            padding: 12px 8px;
             border-bottom: 2px solid #cbd5e1;
             font-weight: 700;
             position: sticky;
             top: 0;
+            white-space: nowrap;
         }
         td {
             padding: 8px 6px;
@@ -187,26 +190,44 @@
             vertical-align: top;
         }
         tr:hover td { background-color: #f9fefb; }
+        
+        /* Gráficas */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+        .chart-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+        }
+        .chart-card h3 {
+            margin: 0 0 12px 0;
+            font-size: 1rem;
+            color: #2d3748;
+            text-align: center;
+        }
+        canvas { max-height: 300px; width: 100%; }
+        
         .info-note {
             background: #fef9e3;
             padding: 12px 18px;
             border-radius: 20px;
             font-size: 0.8rem;
             color: #9c5c00;
+            margin: 16px 0;
         }
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #e2e8f0;
-            border-top-color: #3182ce;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .stats-badge {
+            background: #e6f7e6;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #2d6a4f;
         }
         footer {
             text-align: center;
@@ -214,51 +235,42 @@
             font-size: 0.7rem;
             color: #5a6e85;
         }
-        .auto-load-badge {
-            background: #e6f7e6;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            margin-left: 15px;
-            color: #2d6a4f;
-        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>
-        📊 Dashboard de Tipificaciones por Columna
-        <span class="auto-load-badge" id="autoLoadBadge">🔄 Auto-carga activa</span>
+        📊 Dashboard de Análisis de Llamadas
+        <span class="stats-badge" id="autoLoadBadge">🔄 Auto-carga activa</span>
     </h1>
-    <div class="sub">Reportes individuales S · T · U · V · X · Y | Consolidado (primera no vacía de S a Y)</div>
+    <div class="sub">Reportes por tipificación | Gráficas interactivas | Exportación a Excel</div>
 
     <div class="upload-card">
         <label class="file-label">
-            📂 Subir otro archivo CSV
+            📂 Subir archivo CSV
             <input type="file" id="csvFileInput" accept=".csv">
         </label>
         <div id="uploadStatus" class="status">⏳ Cargando archivo por defecto...</div>
         <div style="margin-top: 12px; font-size: 0.75rem; color: #64748b;">
-            💡 Sugerencia: Coloca tu archivo CSV en la misma carpeta que este HTML y nómbralo como <strong>"datos.csv"</strong> 
-            para que se cargue automáticamente. También puedes subir manualmente cualquier archivo.
+            💡 Coloca tu archivo como <strong>"datos.csv"</strong> en la misma carpeta para auto-carga.
         </div>
     </div>
 
     <!-- TABS PRINCIPALES -->
     <div class="main-tabs">
-        <button class="main-tab active" data-main="tabValid">✅ Contacto Efectivo (D vacío + ANSWER + PERSON)</button>
-        <button class="main-tab" data-main="tabTipi">🏷️ Tipificaciones por Columna (S,T,U,V,X,Y)</button>
-        <button class="main-tab" data-main="tabConsolidado">🔗 Consolidado (primera no vacía S➔Y)</button>
+        <button class="main-tab active" data-main="tabValid">✅ Contactos Efectivos</button>
+        <button class="main-tab" data-main="tabTipi">🏷️ Tipificaciones por Columna</button>
+        <button class="main-tab" data-main="tabConsolidado">🔗 Consolidado S→Y</button>
+        <button class="main-tab" data-main="tabGraficas">📊 Gráficas Estadísticas</button>
     </div>
 
     <!-- PANEL 1: CONTACTOS VÁLIDOS -->
     <div id="tabValid" class="report-section">
         <div class="section-header">
-            <h2>✅ Contactos efectivos (Agente vacío + ANSWER + PERSON)</h2>
+            <h2>✅ Contactos Efectivos <span style="font-size:0.8rem;">(Agente vacío + ANSWER + PERSON)</span></h2>
             <button id="downloadValidBtn" class="download-btn">⬇️ Exportar Excel</button>
         </div>
-        <div class="scroll-table" id="validTableContainer">
+        <div class="table-wrapper" id="validTableContainer">
             <p class="info-note">Cargando datos...</p>
         </div>
     </div>
@@ -266,42 +278,85 @@
     <!-- PANEL 2: TIPIFICACIONES POR COLUMNA -->
     <div id="tabTipi" class="report-section" style="display:none;">
         <div class="section-header">
-            <h2>📌 Reportes individuales por columna de tipificación</h2>
-            <button id="downloadTipiActualBtn" class="download-btn">⬇️ Exportar columna actual (Excel)</button>
+            <h2>📌 Reportes por columna de tipificación</h2>
+            <button id="downloadTipiActualBtn" class="download-btn">⬇️ Exportar columna actual</button>
         </div>
         <div class="sub-tabs" id="subTabsTipi">
             <button class="sub-tab active" data-tipicol="S">📄 Columna S (Disposition General)</button>
             <button class="sub-tab" data-tipicol="T">📄 Columna T (Interesado)</button>
-            <button class="sub-tab" data-tipicol="U">📄 Columna U (No sujeto crédito)</button>
+            <button class="sub-tab" data-tipicol="U">📄 Columna U (No sujeto a crédito)</button>
             <button class="sub-tab" data-tipicol="V">📄 Columna V (No le interesa)</button>
-            <button class="sub-tab" data-tipicol="X">📄 Columna X (Llamada servicio)</button>
-            <button class="sub-tab" data-tipicol="Y">📄 Columna Y (Contacto tercero)</button>
+            <button class="sub-tab" data-tipicol="X">📄 Columna X (Llamada de servicio)</button>
+            <button class="sub-tab" data-tipicol="Y">📄 Columna Y (Contacto con tercero)</button>
         </div>
-        <div class="scroll-table" id="tipiDynamicTable">
-            <p class="info-note">Seleccione una columna para visualizar las filas completas (A-R) junto con el valor de esa tipificación específica.</p>
+        <div class="table-wrapper" id="tipiDynamicTable">
+            <p class="info-note">Seleccione una columna para ver los registros</p>
         </div>
     </div>
 
     <!-- PANEL 3: CONSOLIDADO -->
     <div id="tabConsolidado" class="report-section" style="display:none;">
         <div class="section-header">
-            <h2>🔗 Tipificación consolidada (primera no vacía entre S, T, U, V, X, Y)</h2>
+            <h2>🔗 Tipificación Consolidada (primera no vacía S → Y)</h2>
             <button id="downloadConsolidadoBtn" class="download-btn">⬇️ Exportar Excel</button>
         </div>
-        <div class="scroll-table" id="consolidadoTableContainer">
+        <div class="table-wrapper" id="consolidadoTableContainer">
             <p class="info-note">Cargando datos...</p>
         </div>
     </div>
 
-    <footer>Datos desde columna A (ID llamada) hasta R (Notas). Reportes separados por tipificación individual y consolidado priorizando orden S,T,U,V,X,Y.</footer>
+    <!-- PANEL 4: GRÁFICAS -->
+    <div id="tabGraficas" class="report-section" style="display:none;">
+        <div class="section-header">
+            <h2>📊 Estadísticas y Gráficas</h2>
+        </div>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>📞 Estado de Respuesta</h3>
+                <canvas id="respuestaChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>🤖 Detección de Máquina</h3>
+                <canvas id="deteccionChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>🏷️ Tipificaciones Consolidadas (Top 10)</h3>
+                <canvas id="tipificacionChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>📱 Operador por Destino</h3>
+                <canvas id="operadorChart"></canvas>
+            </div>
+        </div>
+        <div class="info-note">
+            📌 Las gráficas se actualizan automáticamente con los datos del CSV cargado.
+        </div>
+    </div>
+
+    <footer>Reportes desde columna A hasta R | Gráficas interactivas con Chart.js</footer>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-    // ---------- CONFIGURACIÓN ----------
-    const DEFAULT_CSV_FILENAME = 'datos.csv';  // Cambia este nombre si tu archivo se llama diferente
+    // Configuración
+    const DEFAULT_CSV_FILENAME = 'datos.csv';
     
-    // ---------- PARSEADOR CSV ----------
+    // Variables globales
+    let currentHeaders = [];
+    let currentRows = [];
+    let columnMapping = {};
+    let charts = {}; // Para almacenar instancias de Chart.js
+    
+    // Columnas A-R
+    const COL_NAMES_AR = [
+        "ID de llamada", "Tipo", "Campaña", "Agente", "Número identificador de llamada", "Destino",
+        "Estado de respuesta", "Detección de Máquina", "Razón de fin de llamada", "Código de fin de llamada",
+        "Código SIP de fin de llamada", "Duración (segundos)", "Duración (Minutos)", "Tiempo de facturación (minutos)",
+        "Fecha y hora inicio", "Fecha y hora respuesta", "Fecha y hora colgado", "Notas"
+    ];
+    const TIPI_COLS = ["Disposition - DISPOSICIONES CONSUBANCO 3.1", "Disposition - INTERESADO", "Disposition - NO SUJETO A CREDITO", "Disposition - NO LE INTERESA", "Disposition - LLAMADA DE SERVICIO", "Disposition - CONTACTO CON TERCERO"];
+    const TIPI_ALIAS = ["S", "T", "U", "V", "X", "Y"];
+    
+    // Parseador CSV
     function parseCSV(text) {
         let lines = [];
         let inQuote = false;
@@ -345,20 +400,7 @@
         if (rows.length === 0) return { headers: [], data: [] };
         return { headers: rows[0], data: rows.slice(1) };
     }
-
-    let currentHeaders = [];
-    let currentRows = [];
-    let columnMapping = {};
-
-    const COL_NAMES_AR = [
-        "ID de llamada", "Tipo", "Campaña", "Agente", "Número identificador de llamada", "Destino",
-        "Estado de respuesta", "Detección de Máquina", "Razón de fin de llamada", "Código de fin de llamada",
-        "Código SIP de fin de llamada", "Duración (segundos)", "Duración (Minutos)", "Tiempo de facturación (minutos)",
-        "Fecha y hora inicio", "Fecha y hora respuesta", "Fecha y hora colgado", "Notas"
-    ];
-    const TIPI_COLS = ["Disposition - DISPOSICIONES CONSUBANCO 3.1", "Disposition - INTERESADO", "Disposition - NO SUJETO A CREDITO", "Disposition - NO LE INTERESA", "Disposition - LLAMADA DE SERVICIO", "Disposition - CONTACTO CON TERCERO"];
-    const TIPI_ALIAS = ["S", "T", "U", "V", "X", "Y"];
-
+    
     function buildMapping(headers) {
         columnMapping = {};
         COL_NAMES_AR.forEach(name => {
@@ -367,33 +409,28 @@
         });
         TIPI_COLS.forEach((name, i) => {
             const idx = headers.findIndex(h => h.trim() === name);
-            if (idx !== -1) columnMapping[`TIPI_${TIPI_ALIAS[i]}`] = idx;
-            else columnMapping[`TIPI_${TIPI_ALIAS[i]}`] = -1;
+            columnMapping[`TIPI_${TIPI_ALIAS[i]}`] = idx !== -1 ? idx : -1;
         });
         columnMapping.agenteIdx = headers.findIndex(h => h.trim() === "Agente");
         columnMapping.estadoRespuestaIdx = headers.findIndex(h => h.trim() === "Estado de respuesta");
         columnMapping.deteccionIdx = headers.findIndex(h => h.trim() === "Detección de Máquina");
+        columnMapping.destinoIdx = headers.findIndex(h => h.trim() === "Destino");
     }
-
+    
     function getRowsAR(onlyTheseRows = null) {
         const rowsSource = onlyTheseRows !== null ? onlyTheseRows : currentRows;
         const indicesAR = COL_NAMES_AR.map(name => columnMapping[name] !== undefined ? columnMapping[name] : -1);
         const dataRows = rowsSource.map(row => {
-            const rowData = [];
-            for (let i = 0; i < indicesAR.length; i++) {
-                const idx = indicesAR[i];
-                rowData.push(idx !== -1 && idx < row.length ? (row[idx] || "") : "");
-            }
-            return rowData;
+            return indicesAR.map(idx => (idx !== -1 && idx < row.length) ? (row[idx] || "") : "");
         });
         return { headers: COL_NAMES_AR, rows: dataRows };
     }
-
+    
     function getValidContacts() {
         const agenteIdx = columnMapping.agenteIdx;
         const estadoIdx = columnMapping.estadoRespuestaIdx;
         const deteccionIdx = columnMapping.deteccionIdx;
-        if (agenteIdx === undefined || estadoIdx === undefined || deteccionIdx === undefined) return [];
+        if (agenteIdx === undefined) return [];
         return currentRows.filter(row => {
             const agente = (row[agenteIdx] || "").trim();
             const estado = (row[estadoIdx] || "").trim().toUpperCase();
@@ -401,31 +438,30 @@
             return agente === "" && estado === "ANSWER" && deteccion === "PERSON";
         });
     }
-
+    
     function getTipificacionByColumn(tipiLetter) {
         const tipiIdx = columnMapping[`TIPI_${tipiLetter}`];
-        if (tipiIdx === undefined || tipiIdx === -1) return { headers: [], rows: [] };
+        if (tipiIdx === -1) return { headers: [], rows: [] };
         const { headers: arHeaders, rows: arRows } = getRowsAR(currentRows);
-        const extraHeader = `Tipificación_${tipiLetter} (${TIPI_COLS[TIPI_ALIAS.indexOf(tipiLetter)] || tipiLetter})`;
+        const extraHeader = `Tipificación_${tipiLetter}`;
         const finalHeaders = [...arHeaders, extraHeader];
         const finalRows = arRows.map((arRow, idx) => {
-            const originalRow = currentRows[idx];
-            const tipiValue = (tipiIdx >=0 && tipiIdx < originalRow.length) ? (originalRow[tipiIdx] || "") : "";
+            const tipiValue = (tipiIdx >=0 && tipiIdx < currentRows[idx].length) ? (currentRows[idx][tipiIdx] || "") : "";
             return [...arRow, tipiValue];
         });
         return { headers: finalHeaders, rows: finalRows };
     }
-
+    
     function getConsolidadoPrimeraNoVacia() {
         const { headers: arHeaders, rows: arRows } = getRowsAR(currentRows);
-        const indices = TIPI_ALIAS.map(letter => ({ letter, idx: columnMapping[`TIPI_${letter}`] }));
-        const finalHeaders = [...arHeaders, "TIPIFICACION_UNICA (primera S->Y)"];
+        const indices = TIPI_ALIAS.map(letter => columnMapping[`TIPI_${letter}`]);
+        const finalHeaders = [...arHeaders, "TIPIFICACION_UNICA (primera S→Y)"];
         const finalRows = arRows.map((arRow, rowIndex) => {
             const originalRow = currentRows[rowIndex];
             let uniqueValue = "";
-            for (let item of indices) {
-                if (item.idx !== undefined && item.idx !== -1 && item.idx < originalRow.length) {
-                    const val = (originalRow[item.idx] || "").trim();
+            for (let idx of indices) {
+                if (idx !== -1 && idx < originalRow.length) {
+                    const val = (originalRow[idx] || "").trim();
                     if (val !== "") {
                         uniqueValue = val;
                         break;
@@ -436,27 +472,26 @@
         });
         return { headers: finalHeaders, rows: finalRows };
     }
-
+    
+    // Renderizado de tablas
     function renderTable(containerId, tableData, emptyMessage = "Sin registros") {
         const container = document.getElementById(containerId);
         if (!tableData || !tableData.rows || tableData.rows.length === 0) {
             container.innerHTML = `<div class="info-note">📭 ${emptyMessage}</div>`;
             return;
         }
-        const headers = tableData.headers;
-        const rows = tableData.rows;
         let html = `<table><thead><tr>`;
-        headers.forEach(h => html += `<th>${escapeHtml(h)}</th>`);
+        tableData.headers.forEach(h => html += `<th>${escapeHtml(h)}</th>`);
         html += `</tr></thead><tbody>`;
-        rows.forEach(row => {
+        tableData.rows.forEach(row => {
             html += `<tr>`;
             row.forEach(cell => html += `<td>${escapeHtml(String(cell))}</td>`);
-            html += `</table>`;
+            html += `</tr>`;
         });
         html += `</tbody></table>`;
         container.innerHTML = html;
     }
-
+    
     function escapeHtml(str) {
         if (!str) return "";
         return str.replace(/[&<>]/g, function(m) {
@@ -466,167 +501,172 @@
             return m;
         });
     }
-
-    let currentTipiLetter = "S";
     
+    // Actualizar gráficas
+    function updateCharts() {
+        if (!currentRows.length) return;
+        
+        // 1. Estado de respuesta
+        const estadoIdx = columnMapping.estadoRespuestaIdx;
+        const estados = {};
+        if (estadoIdx !== undefined) {
+            currentRows.forEach(row => {
+                let val = (row[estadoIdx] || "DESCONOCIDO").trim();
+                if (val === "") val = "VACÍO";
+                estados[val] = (estados[val] || 0) + 1;
+            });
+        }
+        updateChart("respuestaChart", Object.keys(estados), Object.values(estados), "bar", "rgba(54, 162, 235, 0.7)");
+        
+        // 2. Detección de máquina
+        const deteccionIdx = columnMapping.deteccionIdx;
+        const detecciones = {};
+        if (deteccionIdx !== undefined) {
+            currentRows.forEach(row => {
+                let val = (row[deteccionIdx] || "DESCONOCIDO").trim();
+                if (val === "") val = "VACÍO";
+                detecciones[val] = (detecciones[val] || 0) + 1;
+            });
+        }
+        updateChart("deteccionChart", Object.keys(detecciones), Object.values(detecciones), "pie", ["#36a2eb", "#ff6384", "#ffcd56", "#4bc0c0", "#9966ff"]);
+        
+        // 3. Tipificaciones consolidadas (Top 10)
+        const consolidated = getConsolidadoPrimeraNoVacia();
+        const tipiCount = {};
+        consolidated.rows.forEach(row => {
+            const tipi = row[row.length-1] || "SIN TIPIFICACIÓN";
+            if (tipi.trim() !== "") tipiCount[tipi] = (tipiCount[tipi] || 0) + 1;
+        });
+        const sorted = Object.entries(tipiCount).sort((a,b) => b[1] - a[1]).slice(0, 10);
+        updateChart("tipificacionChart", sorted.map(s => s[0].substring(0, 35)), sorted.map(s => s[1]), "bar", "rgba(255, 99, 132, 0.7)");
+        
+        // 4. Operador por destino
+        const destinoIdx = columnMapping.destinoIdx;
+        const operadores = {};
+        if (destinoIdx !== undefined) {
+            currentRows.forEach(row => {
+                let val = (row[destinoIdx] || "").trim();
+                if (val.includes("Movistar")) val = "Movistar";
+                else if (val.includes("Telcel")) val = "Telcel";
+                else if (val.includes("ATT")) val = "ATT";
+                else if (val.includes("Fijo")) val = "Fijo";
+                else if (val !== "") val = "Otros";
+                else val = "Sin dato";
+                operadores[val] = (operadores[val] || 0) + 1;
+            });
+        }
+        updateChart("operadorChart", Object.keys(operadores), Object.values(operadores), "pie", ["#ff9800", "#4caf50", "#2196f3", "#9c27b0", "#f44336", "#607d8b"]);
+    }
+    
+    function updateChart(chartId, labels, data, type, backgroundColor) {
+        const canvas = document.getElementById(chartId);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (charts[chartId]) charts[chartId].destroy();
+        charts[chartId] = new Chart(ctx, {
+            type: type,
+            data: { labels: labels, datasets: [{ label: 'Frecuencia', data: data, backgroundColor: backgroundColor, borderWidth: 1 }] },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
+        });
+    }
+    
+    // Refresh completo
+    let currentTipiLetter = "S";
     function refreshTipiPanel() {
         if (!currentRows.length) return;
         const data = getTipificacionByColumn(currentTipiLetter);
-        renderTable("tipiDynamicTable", data, `No hay datos para la columna ${currentTipiLetter} o no existe en CSV.`);
+        renderTable("tipiDynamicTable", data, `No hay datos para columna ${currentTipiLetter}`);
         window.currentTipiData = data;
     }
-
-    function refreshAllDashboards() {
+    
+    function refreshAll() {
         if (!currentRows.length) return;
-        const validRowsFiltered = getValidContacts();
-        const arValid = getRowsAR(validRowsFiltered);
-        renderTable("validTableContainer", arValid, "No hay contactos que cumplan Agente vacío + ANSWER + PERSON");
+        const validRows = getValidContacts();
+        const arValid = getRowsAR(validRows);
+        renderTable("validTableContainer", arValid, "No hay contactos válidos");
         window.validData = arValid;
         refreshTipiPanel();
         const consolidated = getConsolidadoPrimeraNoVacia();
-        renderTable("consolidadoTableContainer", consolidated, "No se pudo generar consolidado (verifique columnas S a Y)");
+        renderTable("consolidadoTableContainer", consolidated, "No hay datos consolidados");
         window.consolidatedData = consolidated;
+        updateCharts();
     }
-
+    
     function loadCSVData(file, showMessage = true) {
         const reader = new FileReader();
         reader.onload = function(evt) {
-            const content = evt.target.result;
-            const { headers, data } = parseCSV(content);
+            const { headers, data } = parseCSV(evt.target.result);
             if (!headers || data.length === 0) {
-                const statusDiv = document.getElementById('uploadStatus');
-                statusDiv.innerHTML = "❌ Error: CSV sin encabezados o vacío.";
-                statusDiv.classList.add('error');
+                document.getElementById('uploadStatus').innerHTML = "❌ Error: CSV sin datos";
                 return;
             }
             currentHeaders = headers;
             currentRows = data;
             buildMapping(headers);
-            const statusDiv = document.getElementById('uploadStatus');
-            statusDiv.innerHTML = `✅ Datos cargados: ${data.length} registros | Archivo: ${file.name}`;
-            statusDiv.classList.remove('error');
-            statusDiv.classList.add('success');
-            refreshAllDashboards();
+            document.getElementById('uploadStatus').innerHTML = `✅ ${data.length} registros cargados | ${file.name}`;
+            refreshAll();
         };
-        reader.onerror = () => {
-            const statusDiv = document.getElementById('uploadStatus');
-            statusDiv.innerHTML = "❌ Error al leer el archivo.";
-            statusDiv.classList.add('error');
-        };
+        reader.onerror = () => document.getElementById('uploadStatus').innerHTML = "❌ Error al leer archivo";
         reader.readAsText(file, "UTF-8");
     }
-
-    // Carga automática del archivo por defecto
+    
     function loadDefaultCSV() {
         fetch(DEFAULT_CSV_FILENAME)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`No se encontró ${DEFAULT_CSV_FILENAME}`);
-                }
-                return response.text();
-            })
+            .then(response => { if (!response.ok) throw new Error(); return response.text(); })
             .then(csvText => {
                 const { headers, data } = parseCSV(csvText);
-                if (!headers || data.length === 0) {
-                    throw new Error("CSV vacío o sin encabezados");
-                }
+                if (!headers || data.length === 0) throw new Error();
                 currentHeaders = headers;
                 currentRows = data;
                 buildMapping(headers);
-                const statusDiv = document.getElementById('uploadStatus');
-                statusDiv.innerHTML = `✅ Auto-cargado: ${data.length} registros desde ${DEFAULT_CSV_FILENAME}`;
-                statusDiv.classList.remove('error');
-                statusDiv.classList.add('success');
-                refreshAllDashboards();
+                document.getElementById('uploadStatus').innerHTML = `✅ Auto-cargado: ${data.length} registros desde ${DEFAULT_CSV_FILENAME}`;
+                refreshAll();
             })
-            .catch(error => {
-                console.warn(error);
-                const statusDiv = document.getElementById('uploadStatus');
-                statusDiv.innerHTML = `⚠️ No se encontró "${DEFAULT_CSV_FILENAME}" en la misma carpeta. Usa el botón para subir un archivo CSV manualmente.`;
-                statusDiv.classList.add('error');
-                // Mostrar mensaje en las tablas
+            .catch(() => {
+                document.getElementById('uploadStatus').innerHTML = `⚠️ No se encontró "${DEFAULT_CSV_FILENAME}". Sube un archivo manualmente.`;
                 renderTable("validTableContainer", { headers: [], rows: [] }, "Esperando archivo CSV...");
-                renderTable("tipiDynamicTable", { headers: [], rows: [] }, "Sube un archivo CSV para comenzar");
-                renderTable("consolidadoTableContainer", { headers: [], rows: [] }, "Sube un archivo CSV para comenzar");
+                renderTable("tipiDynamicTable", { headers: [], rows: [] }, "Sube un archivo CSV");
+                renderTable("consolidadoTableContainer", { headers: [], rows: [] }, "Sube un archivo CSV");
             });
     }
-
-    // Evento para subida manual
-    document.getElementById('csvFileInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        loadCSVData(file, true);
-    });
-
-    // TABS principales
-    const mainTabs = document.querySelectorAll('.main-tab');
-    const panelValid = document.getElementById('tabValid');
-    const panelTipi = document.getElementById('tabTipi');
-    const panelCons = document.getElementById('tabConsolidado');
     
-    function setMainTab(activeId) {
-        panelValid.style.display = 'none';
-        panelTipi.style.display = 'none';
-        panelCons.style.display = 'none';
-        if (activeId === 'tabValid') panelValid.style.display = 'block';
-        if (activeId === 'tabTipi') panelTipi.style.display = 'block';
-        if (activeId === 'tabConsolidado') panelCons.style.display = 'block';
+    // Eventos UI
+    document.getElementById('csvFileInput').addEventListener('change', e => { if (e.target.files[0]) loadCSVData(e.target.files[0]); });
+    document.getElementById('downloadValidBtn').addEventListener('click', () => { if(window.validData?.rows.length) downloadExcel(window.validData, "Contactos_Efectivos.xlsx"); else alert("Sin datos"); });
+    document.getElementById('downloadConsolidadoBtn').addEventListener('click', () => { if(window.consolidatedData?.rows.length) downloadExcel(window.consolidatedData, "Tipificacion_Consolidada.xlsx"); else alert("Sin datos"); });
+    document.getElementById('downloadTipiActualBtn').addEventListener('click', () => { if(window.currentTipiData?.rows.length) downloadExcel(window.currentTipiData, `Tipificacion_Columna_${currentTipiLetter}.xlsx`); else alert("Sin datos"); });
+    
+    function downloadExcel(data, filename) {
+        const sheetData = [data.headers, ...data.rows];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), "Reporte");
+        XLSX.writeFile(wb, filename);
     }
     
-    mainTabs.forEach(btn => {
+    // Tabs principales
+    const panels = { tabValid: document.getElementById('tabValid'), tabTipi: document.getElementById('tabTipi'), tabConsolidado: document.getElementById('tabConsolidado'), tabGraficas: document.getElementById('tabGraficas') };
+    document.querySelectorAll('.main-tab').forEach(btn => {
         btn.addEventListener('click', () => {
-            const target = btn.getAttribute('data-main');
-            mainTabs.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.main-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            if (target === 'tabValid') setMainTab('tabValid');
-            if (target === 'tabTipi') setMainTab('tabTipi');
-            if (target === 'tabConsolidado') setMainTab('tabConsolidado');
+            const target = btn.getAttribute('data-main');
+            Object.keys(panels).forEach(p => panels[p].style.display = 'none');
+            if (target === 'tabValid') panels.tabValid.style.display = 'block';
+            if (target === 'tabTipi') panels.tabTipi.style.display = 'block';
+            if (target === 'tabConsolidado') panels.tabConsolidado.style.display = 'block';
+            if (target === 'tabGraficas') { panels.tabGraficas.style.display = 'block'; setTimeout(() => updateCharts(), 100); }
         });
     });
-
-    // Sub-tabs para tipificaciones
-    const subTabs = document.querySelectorAll('.sub-tab');
-    subTabs.forEach(btn => {
+    
+    document.querySelectorAll('.sub-tab').forEach(btn => {
         btn.addEventListener('click', () => {
-            const colLetter = btn.getAttribute('data-tipicol');
-            if (!colLetter) return;
-            currentTipiLetter = colLetter;
-            subTabs.forEach(b => b.classList.remove('active'));
+            currentTipiLetter = btn.getAttribute('data-tipicol');
+            document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             if (currentRows.length) refreshTipiPanel();
         });
     });
-
-    // Botones de descarga
-    document.getElementById('downloadValidBtn').addEventListener('click', () => {
-        if (window.validData && window.validData.rows.length) downloadExcel(window.validData, "Contactos_Efectivos.xlsx");
-        else alert("No hay datos de contactos válidos para exportar.");
-    });
-    document.getElementById('downloadConsolidadoBtn').addEventListener('click', () => {
-        if (window.consolidatedData && window.consolidatedData.rows.length) downloadExcel(window.consolidatedData, "Tipificacion_Consolidada_Primera_S_Y.xlsx");
-        else alert("No hay datos consolidados.");
-    });
-    document.getElementById('downloadTipiActualBtn').addEventListener('click', () => {
-        if (window.currentTipiData && window.currentTipiData.rows.length) {
-            downloadExcel(window.currentTipiData, `Tipificacion_Columna_${currentTipiLetter}.xlsx`);
-        } else {
-            alert("No hay datos para la columna de tipificación activa.");
-        }
-    });
-
-    function downloadExcel(data, filename) {
-        if (!data.rows.length) {
-            alert("No hay registros para exportar.");
-            return;
-        }
-        const sheetData = [data.headers, ...data.rows];
-        const ws = XLSX.utils.aoa_to_sheet(sheetData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Reporte");
-        XLSX.writeFile(wb, filename);
-    }
-
-    // Iniciar carga automática
+    
     loadDefaultCSV();
 </script>
 </body>
