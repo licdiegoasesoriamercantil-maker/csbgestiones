@@ -71,6 +71,7 @@
         }
         .status.error { background: #fee2e2; color: #991b1b; }
         .status.success { background: #dcfce7; color: #166534; }
+        .status.warning { background: #fef3c7; color: #92400e; }
         
         .main-tabs {
             display: flex;
@@ -243,34 +244,76 @@
             font-weight: bold;
             color: #0c4a6e;
         }
+        .filename-input {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: #f8fafc;
+            padding: 12px 15px;
+            border-radius: 20px;
+        }
+        .filename-input label {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        .filename-input input {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px 15px;
+            border: 1px solid #cbd5e0;
+            border-radius: 30px;
+            font-size: 0.85rem;
+        }
+        .filename-input button {
+            background: #2b6cb0;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .filename-input button:hover { background: #1e4a76; }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>
         📊 Dashboard de Análisis de Llamadas
-        
+        <span class="stats-badge" id="autoLoadBadge">🔄 Auto-carga activa</span>
     </h1>
-   
+    <div class="sub">Reportes por tipificación | Gráficas interactivas | Exportación a Excel</div>
 
     <div class="upload-card">
         <label class="file-label">
-            📂 Subir archivo CSV
+            📂 Subir archivo CSV desde tu computadora
             <input type="file" id="csvFileInput" accept=".csv">
         </label>
-        <div id="uploadStatus" class="status">⏳ Cargando archivo por defecto...</div>
         
+        <div class="filename-input">
+            <label>📁 Cargar desde misma ruta:</label>
+            <input type="text" id="csvFilename" value="datos.csv" placeholder="nombre del archivo.csv">
+            <button id="loadSamePathBtn">🔄 Cargar archivo</button>
+        </div>
+        
+        <div id="uploadStatus" class="status">⏳ Intentando auto-cargar datos.csv...</div>
+        <div style="margin-top: 12px; font-size: 0.75rem; color: #64748b;">
+            💡 Si tu archivo está en la misma carpeta que este HTML, se cargará automáticamente.<br>
+            💡 También puedes cambiar el nombre del archivo y hacer clic en "Cargar archivo".
+        </div>
     </div>
 
     <div class="main-tabs">
         <button class="main-tab active" data-main="tabValid">✅ Contactos Efectivos</button>
-        <button class="main-tab" data-main="tabTipi">🏷️ Tipificaciones</button>
+        <button class="main-tab" data-main="tabTipi">🏷️ Tipificaciones (Columna AA)</button>
         <button class="main-tab" data-main="tabGraficas">📊 Gráficas Estadísticas</button>
     </div>
 
     <div id="tabValid" class="report-section">
         <div class="section-header">
-            <h2>✅ Contactos Efectivos Sin Gestor<span style="font-size:0.8rem;"></span></h2>
+            <h2>✅ Contactos Efectivos <span style="font-size:0.8rem;">(Agente vacío + ANSWER + PERSON)</span></h2>
             <button id="downloadValidBtn" class="download-btn">⬇️ Exportar Excel</button>
         </div>
         <div class="table-wrapper" id="validTableContainer">
@@ -280,7 +323,7 @@
 
     <div id="tabTipi" class="report-section" style="display:none;">
         <div class="section-header">
-            <h2>📌 Tipificaciones</h2>
+            <h2>📌 Tipificaciones - Columna AA (Solo registros con dato en AA)</h2>
             <button id="downloadTipiBtn" class="download-btn">⬇️ Exportar Excel</button>
         </div>
         <div class="stats-summary" id="tipiSummary">
@@ -293,7 +336,7 @@
             </select>
         </div>
         <div class="table-wrapper" id="tipiTableContainer">
-            <div class="info-note">Cargando datos...</div>
+            <div class="info-note">Cargando datos de columna AA...</div>
         </div>
     </div>
 
@@ -311,24 +354,28 @@
                 <canvas id="deteccionChart"></canvas>
             </div>
             <div class="chart-card">
-                <h3>🏷️ Tipificaciones- Top 10</h3>
+                <h3>🏷️ Tipificaciones (AA con datos) - Top 10</h3>
                 <canvas id="tipificacionChart"></canvas>
             </div>
-            
+            <div class="chart-card">
+                <h3>⚠️ Registros SIN Tipificación (AA vacío)</h3>
+                <canvas id="sinTipiChart"></canvas>
+            </div>
             <div class="chart-card">
                 <h3>📱 Operador por Destino</h3>
                 <canvas id="operadorChart"></canvas>
             </div>
         </div>
-       
+        <div class="info-note">
+            📌 Las gráficas se actualizan automáticamente con los datos del CSV cargado.<br>
+            📌 "SIN Tipificación" muestra registros donde la columna AA está vacía o sin dato.
+        </div>
     </div>
 
-    
+    <footer>Reportes desde columna A hasta R | Gráficas interactivas con Chart.js</footer>
 </div>
 
 <script>
-    const DEFAULT_CSV_FILENAME = 'Llamadas.csv';
-    
     let currentHeaders = [];
     let currentRows = [];
     let columnMapping = {};
@@ -429,21 +476,18 @@
         });
     }
     
-    // Obtiene SOLO registros que tienen dato en AA (no vacío)
     function getTipificacionAAData(filtro = null) {
         const tipiIdx = columnMapping.tipificacionAA_idx;
         const { headers: arHeaders, rows: arRows } = getRowsAR(currentRows);
         const extraHeader = "Tipificación (Columna AA)";
         const finalHeaders = [...arHeaders, extraHeader];
         
-        // Filtrar SOLO registros donde AA tiene dato (no vacío)
         let finalRows = [];
         for (let idx = 0; idx < arRows.length; idx++) {
             let tipiValue = "";
             if (tipiIdx !== undefined && tipiIdx !== -1 && tipiIdx < currentRows[idx].length) {
                 tipiValue = (currentRows[idx][tipiIdx] || "").trim();
             }
-            // Solo incluir si tiene dato en AA
             if (tipiValue !== "") {
                 finalRows.push([...arRows[idx], tipiValue]);
             }
@@ -456,7 +500,6 @@
         return { headers: finalHeaders, rows: finalRows };
     }
     
-    // Obtiene estadísticas de AA: cuántos tienen dato vs cuántos vacíos
     function getTipiStats() {
         const tipiIdx = columnMapping.tipificacionAA_idx;
         if (tipiIdx === undefined || tipiIdx === -1) {
@@ -512,9 +555,9 @@
         if (summaryDiv) {
             summaryDiv.innerHTML = `
                 <span>📊 Total registros: <span>${stats.total}</span></span>
-                <span>✅ Con tipificación: <span style="color:#166534;">${stats.conDato}</span></span>
-                <span>⚠️ Sin tipificación: <span style="color:#b91c1c;">${stats.sinDato}</span></span>
-                <span>📌 Mostrando solo ${stats.conDato} tipificaciones</span>
+                <span>✅ Con tipificación (AA con dato): <span style="color:#166534;">${stats.conDato}</span></span>
+                <span>⚠️ Sin tipificación (AA vacío): <span style="color:#b91c1c;">${stats.sinDato}</span></span>
+                <span>📌 Mostrando solo ${stats.conDato} registros con dato en AA</span>
             `;
         }
     }
@@ -558,7 +601,6 @@
     function updateCharts() {
         if (!currentRows.length) return;
         
-        // Estado de respuesta
         const estadoIdx = columnMapping.estadoRespuestaIdx;
         const estados = {};
         if (estadoIdx !== undefined && estadoIdx !== -1) {
@@ -570,7 +612,6 @@
         }
         updateChart("respuestaChart", Object.keys(estados), Object.values(estados), "bar", "rgba(54, 162, 235, 0.7)");
         
-        // Detección de máquina
         const deteccionIdx = columnMapping.deteccionIdx;
         const detecciones = {};
         if (deteccionIdx !== undefined && deteccionIdx !== -1) {
@@ -582,7 +623,6 @@
         }
         updateChart("deteccionChart", Object.keys(detecciones), Object.values(detecciones), "pie", ["#36a2eb", "#ff6384", "#ffcd56", "#4bc0c0", "#9966ff"]);
         
-        // Tipificaciones de AA - SOLO LAS QUE TIENEN DATO
         const tipiIdx = columnMapping.tipificacionAA_idx;
         const tipiCount = {};
         let sinTipificacion = 0;
@@ -602,11 +642,9 @@
         const sorted = Object.entries(tipiCount).sort((a,b) => b[1] - a[1]).slice(0, 10);
         updateChart("tipificacionChart", sorted.map(s => s[0].substring(0, 35)), sorted.map(s => s[1]), "bar", "rgba(34, 197, 94, 0.7)");
         
-        // Gráfica de SIN Tipificación vs CON Tipificación
         const conTipi = currentRows.length - sinTipificacion;
         updateChart("sinTipiChart", ["✓ Con tipificación (AA con dato)", "✗ Sin tipificación (AA vacío)"], [conTipi, sinTipificacion], "pie", ["#22c55e", "#ef4444"]);
         
-        // Operador por destino
         const destinoIdx = columnMapping.destinoIdx;
         const operadores = {};
         if (destinoIdx !== undefined && destinoIdx !== -1) {
@@ -632,7 +670,7 @@
         if (labels.length === 0) {
             charts[chartId] = new Chart(ctx, {
                 type: type,
-                data: { labels: ["Sin datos"], datasets: [{ label: 'Frecuencia', data: [0], backgroundColor: "#cccccc", borderWidth: 1 }] },
+                data: { labels: ["Sin datos"], datasets: [{ label: 'Cantidad', data: [0], backgroundColor: "#cccccc", borderWidth: 1 }] },
                 options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
             });
             return;
@@ -666,26 +704,32 @@
         updateCharts();
     }
     
-    function loadCSVData(file) {
+    function loadCSVFromText(csvText, sourceName) {
+        try {
+            const { headers, data } = parseCSV(csvText);
+            if (!headers || headers.length === 0 || data.length === 0) {
+                document.getElementById('uploadStatus').innerHTML = "❌ Error: CSV sin datos válidos";
+                document.getElementById('uploadStatus').className = "status error";
+                return false;
+            }
+            currentHeaders = headers;
+            currentRows = data;
+            buildMapping(headers);
+            document.getElementById('uploadStatus').innerHTML = `✅ ${data.length} registros cargados | ${sourceName}`;
+            document.getElementById('uploadStatus').className = "status success";
+            refreshAll();
+            return true;
+        } catch(e) {
+            document.getElementById('uploadStatus').innerHTML = "❌ Error al procesar CSV: " + e.message;
+            document.getElementById('uploadStatus').className = "status error";
+            return false;
+        }
+    }
+    
+    function loadCSVFromFile(file) {
         const reader = new FileReader();
         reader.onload = function(evt) {
-            try {
-                const { headers, data } = parseCSV(evt.target.result);
-                if (!headers || headers.length === 0 || data.length === 0) {
-                    document.getElementById('uploadStatus').innerHTML = "❌ Error: CSV sin datos válidos";
-                    document.getElementById('uploadStatus').className = "status error";
-                    return;
-                }
-                currentHeaders = headers;
-                currentRows = data;
-                buildMapping(headers);
-                document.getElementById('uploadStatus').innerHTML = `✅ ${data.length} registros cargados | ${file.name}`;
-                document.getElementById('uploadStatus').className = "status success";
-                refreshAll();
-            } catch(e) {
-                document.getElementById('uploadStatus').innerHTML = "❌ Error al procesar CSV";
-                document.getElementById('uploadStatus').className = "status error";
-            }
+            loadCSVFromText(evt.target.result, file.name);
         };
         reader.onerror = () => {
             document.getElementById('uploadStatus').innerHTML = "❌ Error al leer archivo";
@@ -694,30 +738,48 @@
         reader.readAsText(file, "UTF-8");
     }
     
-    function loadDefaultCSV() {
-        fetch(DEFAULT_CSV_FILENAME)
-            .then(response => { if (!response.ok) throw new Error(); return response.text(); })
-            .then(csvText => {
-                const { headers, data } = parseCSV(csvText);
-                if (!headers || headers.length === 0 || data.length === 0) throw new Error();
-                currentHeaders = headers;
-                currentRows = data;
-                buildMapping(headers);
-                document.getElementById('uploadStatus').innerHTML = `✅ Auto-cargado: ${data.length} registros desde ${DEFAULT_CSV_FILENAME}`;
-                document.getElementById('uploadStatus').className = "status success";
-                refreshAll();
+    function loadCSVFromSamePath(filename) {
+        document.getElementById('uploadStatus').innerHTML = `⏳ Cargando ${filename} desde la misma ruta...`;
+        document.getElementById('uploadStatus').className = "status";
+        
+        fetch(filename)
+            .then(response => {
+                if (!response.ok) throw new Error(`No se encontró el archivo (HTTP ${response.status})`);
+                return response.text();
             })
-            .catch(() => {
-                document.getElementById('uploadStatus').innerHTML = `⚠️ No se encontró "${DEFAULT_CSV_FILENAME}". Sube un archivo manualmente.`;
-                document.getElementById('uploadStatus').className = "status";
-                renderTable("validTableContainer", { headers: [], rows: [] }, "Esperando archivo CSV...");
-                renderTable("tipiTableContainer", { headers: [], rows: [] }, "Sube un archivo CSV");
+            .then(csvText => {
+                loadCSVFromText(csvText, filename);
+            })
+            .catch(error => {
+                document.getElementById('uploadStatus').innerHTML = `❌ No se pudo cargar "${filename}": ${error.message}. Verifica que el archivo exista en la misma carpeta.`;
+                document.getElementById('uploadStatus').className = "status error";
             });
     }
     
-    document.getElementById('csvFileInput').addEventListener('change', e => { if (e.target.files[0]) loadCSVData(e.target.files[0]); });
-    document.getElementById('downloadValidBtn').addEventListener('click', () => { if(window.validData?.rows.length) downloadExcel(window.validData, "Contactos_Efectivos.xlsx"); else alert("Sin datos"); });
-    document.getElementById('downloadTipiBtn').addEventListener('click', () => { if(window.currentTipiData?.rows.length) downloadExcel(window.currentTipiData, "Tipificacion_Columna_AA.xlsx"); else alert("Sin datos"); });
+    // Eventos
+    document.getElementById('csvFileInput').addEventListener('change', e => { 
+        if (e.target.files[0]) loadCSVFromFile(e.target.files[0]); 
+    });
+    
+    document.getElementById('loadSamePathBtn').addEventListener('click', () => {
+        const filename = document.getElementById('csvFilename').value.trim();
+        if (filename) {
+            loadCSVFromSamePath(filename);
+        } else {
+            document.getElementById('uploadStatus').innerHTML = "⚠️ Ingresa un nombre de archivo";
+            document.getElementById('uploadStatus').className = "status warning";
+        }
+    });
+    
+    document.getElementById('downloadValidBtn').addEventListener('click', () => { 
+        if(window.validData?.rows.length) downloadExcel(window.validData, "Contactos_Efectivos.xlsx"); 
+        else alert("Sin datos"); 
+    });
+    
+    document.getElementById('downloadTipiBtn').addEventListener('click', () => { 
+        if(window.currentTipiData?.rows.length) downloadExcel(window.currentTipiData, "Tipificacion_Columna_AA.xlsx"); 
+        else alert("Sin datos"); 
+    });
     
     const tipiFilterSelect = document.getElementById('tipiFilterSelect');
     if (tipiFilterSelect) {
@@ -754,7 +816,8 @@
         });
     });
     
-    loadDefaultCSV();
+    // Auto-cargar datos.csv al iniciar
+    loadCSVFromSamePath('datos.csv');
 </script>
 </body>
 </html>
