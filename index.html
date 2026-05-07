@@ -72,7 +72,6 @@
         .status.error { background: #fee2e2; color: #991b1b; }
         .status.success { background: #dcfce7; color: #166534; }
         
-        /* Tabs */
         .main-tabs {
             display: flex;
             gap: 8px;
@@ -98,32 +97,6 @@
             box-shadow: 0 2px 8px rgba(49,130,206,0.3);
         }
         
-        /* Sub-tabs */
-        .sub-tabs {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin: 16px 0 12px 0;
-            border-bottom: 1px solid #cbd5e0;
-            padding-bottom: 8px;
-        }
-        .sub-tab {
-            background: #e9ecef;
-            border: none;
-            padding: 6px 18px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
-            color: #2c3e50;
-        }
-        .sub-tab.active {
-            background: #2c5282;
-            color: white;
-        }
-        
-        /* Report sections */
         .report-section {
             background: white;
             border-radius: 28px;
@@ -161,40 +134,43 @@
         }
         .download-btn:hover { background: #1e4a76; }
         
-        /* Tablas */
         .table-wrapper {
             overflow-x: auto;
+            overflow-y: visible;
             border-radius: 16px;
             margin-top: 16px;
             border: 1px solid #e2e8f0;
+            background: white;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.75rem;
             min-width: 800px;
+            display: table;
         }
         th {
-            background: #f8fafc;
+            background: #f1f5f9;
             color: #1e4663;
-            padding: 12px 8px;
-            border-bottom: 2px solid #cbd5e1;
+            padding: 12px 10px;
+            border: 1px solid #cbd5e1;
             font-weight: 700;
-            position: sticky;
-            top: 0;
+            font-size: 0.75rem;
             white-space: nowrap;
+            text-align: left;
         }
         td {
-            padding: 8px 6px;
-            border-bottom: 1px solid #e2e8f0;
+            padding: 10px 8px;
+            border: 1px solid #e2e8f0;
             vertical-align: top;
+            font-size: 0.75rem;
+            background-color: white;
         }
-        tr:hover td { background-color: #f9fefb; }
+        tr:hover td { background-color: #f8fafc; }
         
-        /* Gráficas */
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
             gap: 24px;
             margin-bottom: 30px;
         }
@@ -211,7 +187,7 @@
             color: #2d3748;
             text-align: center;
         }
-        canvas { max-height: 300px; width: 100%; }
+        canvas { max-height: 280px; width: 100%; }
         
         .info-note {
             background: #fef9e3;
@@ -235,15 +211,47 @@
             font-size: 0.7rem;
             color: #5a6e85;
         }
+        .tipi-filter {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .tipi-filter label {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        .tipi-filter select {
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid #cbd5e0;
+            background: white;
+            font-size: 0.85rem;
+        }
+        .stats-summary {
+            background: #e0f2fe;
+            border-radius: 16px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+        }
+        .stats-summary span {
+            font-weight: bold;
+            color: #0c4a6e;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>
         📊 Dashboard de Análisis de Llamadas
-        <span class="stats-badge" id="autoLoadBadge">🔄 Auto-carga activa</span>
+        
     </h1>
-    <div class="sub">Reportes por tipificación | Gráficas interactivas | Exportación a Excel</div>
+   
 
     <div class="upload-card">
         <label class="file-label">
@@ -251,61 +259,44 @@
             <input type="file" id="csvFileInput" accept=".csv">
         </label>
         <div id="uploadStatus" class="status">⏳ Cargando archivo por defecto...</div>
-        <div style="margin-top: 12px; font-size: 0.75rem; color: #64748b;">
-            💡 Coloca tu archivo como <strong>"datos.csv"</strong> en la misma carpeta para auto-carga.
-        </div>
+        
     </div>
 
-    <!-- TABS PRINCIPALES -->
     <div class="main-tabs">
         <button class="main-tab active" data-main="tabValid">✅ Contactos Efectivos</button>
-        <button class="main-tab" data-main="tabTipi">🏷️ Tipificaciones por Columna</button>
-        <button class="main-tab" data-main="tabConsolidado">🔗 Consolidado S→Y</button>
+        <button class="main-tab" data-main="tabTipi">🏷️ Tipificaciones (Columna AA)</button>
         <button class="main-tab" data-main="tabGraficas">📊 Gráficas Estadísticas</button>
     </div>
 
-    <!-- PANEL 1: CONTACTOS VÁLIDOS -->
     <div id="tabValid" class="report-section">
         <div class="section-header">
-            <h2>✅ Contactos Efectivos <span style="font-size:0.8rem;">(Agente vacío + ANSWER + PERSON)</span></h2>
+            <h2>✅ Contactos Efectivos Sin Gestor<span style="font-size:0.8rem;"></span></h2>
             <button id="downloadValidBtn" class="download-btn">⬇️ Exportar Excel</button>
         </div>
         <div class="table-wrapper" id="validTableContainer">
-            <p class="info-note">Cargando datos...</p>
+            <div class="info-note">Cargando datos...</div>
         </div>
     </div>
 
-    <!-- PANEL 2: TIPIFICACIONES POR COLUMNA -->
     <div id="tabTipi" class="report-section" style="display:none;">
         <div class="section-header">
-            <h2>📌 Reportes por columna de tipificación</h2>
-            <button id="downloadTipiActualBtn" class="download-btn">⬇️ Exportar columna actual</button>
+            <h2>📌 Tipificaciones</h2>
+            <button id="downloadTipiBtn" class="download-btn">⬇️ Exportar Excel</button>
         </div>
-        <div class="sub-tabs" id="subTabsTipi">
-            <button class="sub-tab active" data-tipicol="S">📄 Columna S (Disposition General)</button>
-            <button class="sub-tab" data-tipicol="T">📄 Columna T (Interesado)</button>
-            <button class="sub-tab" data-tipicol="U">📄 Columna U (No sujeto a crédito)</button>
-            <button class="sub-tab" data-tipicol="V">📄 Columna V (No le interesa)</button>
-            <button class="sub-tab" data-tipicol="X">📄 Columna X (Llamada de servicio)</button>
-            <button class="sub-tab" data-tipicol="Y">📄 Columna Y (Contacto con tercero)</button>
+        <div class="stats-summary" id="tipiSummary">
+            <span>🔄 Cargando estadísticas...</span>
         </div>
-        <div class="table-wrapper" id="tipiDynamicTable">
-            <p class="info-note">Seleccione una columna para ver los registros</p>
+        <div class="tipi-filter">
+            <label>🎯 Filtrar por tipificación:</label>
+            <select id="tipiFilterSelect">
+                <option value="TODOS">📋 Todas las tipificaciones</option>
+            </select>
         </div>
-    </div>
-
-    <!-- PANEL 3: CONSOLIDADO -->
-    <div id="tabConsolidado" class="report-section" style="display:none;">
-        <div class="section-header">
-            <h2>🔗 Tipificación Consolidada (primera no vacía S → Y)</h2>
-            <button id="downloadConsolidadoBtn" class="download-btn">⬇️ Exportar Excel</button>
-        </div>
-        <div class="table-wrapper" id="consolidadoTableContainer">
-            <p class="info-note">Cargando datos...</p>
+        <div class="table-wrapper" id="tipiTableContainer">
+            <div class="info-note">Cargando datos...</div>
         </div>
     </div>
 
-    <!-- PANEL 4: GRÁFICAS -->
     <div id="tabGraficas" class="report-section" style="display:none;">
         <div class="section-header">
             <h2>📊 Estadísticas y Gráficas</h2>
@@ -320,65 +311,46 @@
                 <canvas id="deteccionChart"></canvas>
             </div>
             <div class="chart-card">
-                <h3>🏷️ Tipificaciones Consolidadas (Top 10)</h3>
+                <h3>🏷️ Tipificaciones- Top 10</h3>
                 <canvas id="tipificacionChart"></canvas>
             </div>
+            
             <div class="chart-card">
                 <h3>📱 Operador por Destino</h3>
                 <canvas id="operadorChart"></canvas>
             </div>
         </div>
-        <div class="info-note">
-            📌 Las gráficas se actualizan automáticamente con los datos del CSV cargado.
-        </div>
+       
     </div>
 
-    <footer>Reportes desde columna A hasta R | Gráficas interactivas con Chart.js</footer>
+    
 </div>
 
 <script>
-    // Configuración
     const DEFAULT_CSV_FILENAME = 'datos.csv';
     
-    // Variables globales
     let currentHeaders = [];
     let currentRows = [];
     let columnMapping = {};
-    let charts = {}; // Para almacenar instancias de Chart.js
+    let charts = {};
     
-    // Columnas A-R
     const COL_NAMES_AR = [
         "ID de llamada", "Tipo", "Campaña", "Agente", "Número identificador de llamada", "Destino",
         "Estado de respuesta", "Detección de Máquina", "Razón de fin de llamada", "Código de fin de llamada",
         "Código SIP de fin de llamada", "Duración (segundos)", "Duración (Minutos)", "Tiempo de facturación (minutos)",
         "Fecha y hora inicio", "Fecha y hora respuesta", "Fecha y hora colgado", "Notas"
     ];
-    const TIPI_COLS = ["Disposition - DISPOSICIONES CONSUBANCO 3.1", "Disposition - INTERESADO", "Disposition - NO SUJETO A CREDITO", "Disposition - NO LE INTERESA", "Disposition - LLAMADA DE SERVICIO", "Disposition - CONTACTO CON TERCERO"];
-    const TIPI_ALIAS = ["S", "T", "U", "V", "X", "Y"];
     
-    // Parseador CSV
     function parseCSV(text) {
-        let lines = [];
-        let inQuote = false;
-        let buffer = '';
-        for (let ch of text) {
-            buffer += ch;
-            if (ch === '\n' && !inQuote) {
-                lines.push(buffer.slice(0, -1));
-                buffer = '';
-            } else if (ch === '"') {
-                inQuote = !inQuote;
-            }
-        }
-        if (buffer) lines.push(buffer);
-        const rows = [];
-        for (let line of lines) {
-            if (line.trim() === "") continue;
-            let row = [];
-            let current = "";
+        const lines = text.split(/\r?\n/);
+        if (lines.length === 0) return { headers: [], data: [] };
+        
+        function parseRow(line) {
+            const result = [];
+            let current = '';
             let inQuotes = false;
             for (let i = 0; i < line.length; i++) {
-                let ch = line[i];
+                const ch = line[i];
                 if (ch === '"') {
                     if (inQuotes && line[i+1] === '"') {
                         current += '"';
@@ -387,34 +359,52 @@
                         inQuotes = !inQuotes;
                     }
                 } else if (ch === ',' && !inQuotes) {
-                    row.push(current);
-                    current = "";
+                    result.push(current.trim());
+                    current = '';
                 } else {
                     current += ch;
                 }
             }
-            row.push(current);
-            row = row.map(cell => cell.replace(/^\s+|\s+$/g, '').replace(/^"|"$/g, '').replace(/""/g, '"'));
-            rows.push(row);
+            result.push(current.trim());
+            return result.map(cell => cell.replace(/^"|"$/g, '').replace(/""/g, '"'));
         }
-        if (rows.length === 0) return { headers: [], data: [] };
-        return { headers: rows[0], data: rows.slice(1) };
+        
+        const headers = parseRow(lines[0]);
+        const data = [];
+        for (let i = 1; i < lines.length; i++) {
+            if (lines[i].trim() === '') continue;
+            data.push(parseRow(lines[i]));
+        }
+        return { headers, data };
     }
     
     function buildMapping(headers) {
         columnMapping = {};
+        
         COL_NAMES_AR.forEach(name => {
-            const idx = headers.findIndex(h => h.trim() === name);
-            if (idx !== -1) columnMapping[name] = idx;
+            const idx = headers.findIndex(h => h && h.trim() === name);
+            columnMapping[name] = idx !== -1 ? idx : -1;
         });
-        TIPI_COLS.forEach((name, i) => {
-            const idx = headers.findIndex(h => h.trim() === name);
-            columnMapping[`TIPI_${TIPI_ALIAS[i]}`] = idx !== -1 ? idx : -1;
-        });
-        columnMapping.agenteIdx = headers.findIndex(h => h.trim() === "Agente");
-        columnMapping.estadoRespuestaIdx = headers.findIndex(h => h.trim() === "Estado de respuesta");
-        columnMapping.deteccionIdx = headers.findIndex(h => h.trim() === "Detección de Máquina");
-        columnMapping.destinoIdx = headers.findIndex(h => h.trim() === "Destino");
+        
+        // Columna AA = índice 26
+        if (headers.length > 26) {
+            columnMapping.tipificacionAA_idx = 26;
+        } else {
+            let found = -1;
+            for (let i = 0; i < headers.length; i++) {
+                const h = headers[i] ? headers[i].toLowerCase() : '';
+                if (h === 'aa' || h === 'tipificación' || h === 'tipificacion' || h === 'disposition') {
+                    found = i;
+                    break;
+                }
+            }
+            columnMapping.tipificacionAA_idx = found;
+        }
+        
+        columnMapping.agenteIdx = headers.findIndex(h => h && h.trim() === "Agente");
+        columnMapping.estadoRespuestaIdx = headers.findIndex(h => h && h.trim() === "Estado de respuesta");
+        columnMapping.deteccionIdx = headers.findIndex(h => h && h.trim() === "Detección de Máquina");
+        columnMapping.destinoIdx = headers.findIndex(h => h && h.trim() === "Destino");
     }
     
     function getRowsAR(onlyTheseRows = null) {
@@ -430,7 +420,7 @@
         const agenteIdx = columnMapping.agenteIdx;
         const estadoIdx = columnMapping.estadoRespuestaIdx;
         const deteccionIdx = columnMapping.deteccionIdx;
-        if (agenteIdx === undefined) return [];
+        if (agenteIdx === undefined || agenteIdx === -1) return [];
         return currentRows.filter(row => {
             const agente = (row[agenteIdx] || "").trim();
             const estado = (row[estadoIdx] || "").trim().toUpperCase();
@@ -439,56 +429,119 @@
         });
     }
     
-    function getTipificacionByColumn(tipiLetter) {
-        const tipiIdx = columnMapping[`TIPI_${tipiLetter}`];
-        if (tipiIdx === -1) return { headers: [], rows: [] };
+    // Obtiene SOLO registros que tienen dato en AA (no vacío)
+    function getTipificacionAAData(filtro = null) {
+        const tipiIdx = columnMapping.tipificacionAA_idx;
         const { headers: arHeaders, rows: arRows } = getRowsAR(currentRows);
-        const extraHeader = `Tipificación_${tipiLetter}`;
+        const extraHeader = "Tipificación (Columna AA)";
         const finalHeaders = [...arHeaders, extraHeader];
-        const finalRows = arRows.map((arRow, idx) => {
-            const tipiValue = (tipiIdx >=0 && tipiIdx < currentRows[idx].length) ? (currentRows[idx][tipiIdx] || "") : "";
-            return [...arRow, tipiValue];
-        });
-        return { headers: finalHeaders, rows: finalRows };
-    }
-    
-    function getConsolidadoPrimeraNoVacia() {
-        const { headers: arHeaders, rows: arRows } = getRowsAR(currentRows);
-        const indices = TIPI_ALIAS.map(letter => columnMapping[`TIPI_${letter}`]);
-        const finalHeaders = [...arHeaders, "TIPIFICACION_UNICA (primera S→Y)"];
-        const finalRows = arRows.map((arRow, rowIndex) => {
-            const originalRow = currentRows[rowIndex];
-            let uniqueValue = "";
-            for (let idx of indices) {
-                if (idx !== -1 && idx < originalRow.length) {
-                    const val = (originalRow[idx] || "").trim();
-                    if (val !== "") {
-                        uniqueValue = val;
-                        break;
-                    }
-                }
+        
+        // Filtrar SOLO registros donde AA tiene dato (no vacío)
+        let finalRows = [];
+        for (let idx = 0; idx < arRows.length; idx++) {
+            let tipiValue = "";
+            if (tipiIdx !== undefined && tipiIdx !== -1 && tipiIdx < currentRows[idx].length) {
+                tipiValue = (currentRows[idx][tipiIdx] || "").trim();
             }
-            return [...arRow, uniqueValue];
-        });
+            // Solo incluir si tiene dato en AA
+            if (tipiValue !== "") {
+                finalRows.push([...arRows[idx], tipiValue]);
+            }
+        }
+        
+        if (filtro && filtro !== "TODOS") {
+            finalRows = finalRows.filter(row => row[row.length-1] === filtro);
+        }
+        
         return { headers: finalHeaders, rows: finalRows };
     }
     
-    // Renderizado de tablas
+    // Obtiene estadísticas de AA: cuántos tienen dato vs cuántos vacíos
+    function getTipiStats() {
+        const tipiIdx = columnMapping.tipificacionAA_idx;
+        if (tipiIdx === undefined || tipiIdx === -1) {
+            return { conDato: 0, sinDato: currentRows.length, total: currentRows.length };
+        }
+        
+        let conDato = 0;
+        let sinDato = 0;
+        currentRows.forEach(row => {
+            if (tipiIdx < row.length) {
+                const val = (row[tipiIdx] || "").trim();
+                if (val !== "") {
+                    conDato++;
+                } else {
+                    sinDato++;
+                }
+            } else {
+                sinDato++;
+            }
+        });
+        return { conDato, sinDato, total: currentRows.length };
+    }
+    
+    function getUniqueTipificaciones() {
+        const tipiIdx = columnMapping.tipificacionAA_idx;
+        if (tipiIdx === undefined || tipiIdx === -1) return [];
+        const values = new Set();
+        currentRows.forEach(row => {
+            if (tipiIdx < row.length) {
+                const val = (row[tipiIdx] || "").trim();
+                if (val !== "") values.add(val);
+            }
+        });
+        return Array.from(values).sort();
+    }
+    
+    function updateTipiFilter() {
+        const select = document.getElementById('tipiFilterSelect');
+        if (!select) return;
+        const uniqueTips = getUniqueTipificaciones();
+        select.innerHTML = '<option value="TODOS">📋 Todas las tipificaciones</option>';
+        uniqueTips.forEach(tipi => {
+            const option = document.createElement('option');
+            option.value = tipi;
+            option.textContent = tipi.length > 50 ? tipi.substring(0, 47) + "..." : tipi;
+            select.appendChild(option);
+        });
+    }
+    
+    function updateTipiSummary() {
+        const stats = getTipiStats();
+        const summaryDiv = document.getElementById('tipiSummary');
+        if (summaryDiv) {
+            summaryDiv.innerHTML = `
+                <span>📊 Total registros: <span>${stats.total}</span></span>
+                <span>✅ Con tipificación (AA con dato): <span style="color:#166534;">${stats.conDato}</span></span>
+                <span>⚠️ Sin tipificación (AA vacío): <span style="color:#b91c1c;">${stats.sinDato}</span></span>
+                <span>📌 Mostrando solo ${stats.conDato} registros con dato en AA</span>
+            `;
+        }
+    }
+    
     function renderTable(containerId, tableData, emptyMessage = "Sin registros") {
         const container = document.getElementById(containerId);
+        if (!container) return;
+        
         if (!tableData || !tableData.rows || tableData.rows.length === 0) {
             container.innerHTML = `<div class="info-note">📭 ${emptyMessage}</div>`;
             return;
         }
-        let html = `<table><thead><tr>`;
-        tableData.headers.forEach(h => html += `<th>${escapeHtml(h)}</th>`);
-        html += `</tr></thead><tbody>`;
-        tableData.rows.forEach(row => {
-            html += `<tr>`;
-            row.forEach(cell => html += `<td>${escapeHtml(String(cell))}</td>`);
-            html += `</tr>`;
+        
+        let html = '<table style="width:100%; border-collapse:collapse; border:1px solid #cbd5e1;">';
+        html += '<thead><tr>';
+        tableData.headers.forEach(h => {
+            html += `<th style="border:1px solid #cbd5e1; padding:10px 8px; background:#f1f5f9; font-weight:bold; text-align:left; white-space:nowrap;">${escapeHtml(h)}</th>`;
         });
-        html += `</tbody></table>`;
+        html += '</tr></thead><tbody>';
+        tableData.rows.forEach(row => {
+            html += '<tr>';
+            row.forEach(cell => {
+                html += `<td style="border:1px solid #e2e8f0; padding:8px 6px; vertical-align:top;">${escapeHtml(String(cell))}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
         container.innerHTML = html;
     }
     
@@ -502,14 +555,13 @@
         });
     }
     
-    // Actualizar gráficas
     function updateCharts() {
         if (!currentRows.length) return;
         
-        // 1. Estado de respuesta
+        // Estado de respuesta
         const estadoIdx = columnMapping.estadoRespuestaIdx;
         const estados = {};
-        if (estadoIdx !== undefined) {
+        if (estadoIdx !== undefined && estadoIdx !== -1) {
             currentRows.forEach(row => {
                 let val = (row[estadoIdx] || "DESCONOCIDO").trim();
                 if (val === "") val = "VACÍO";
@@ -518,10 +570,10 @@
         }
         updateChart("respuestaChart", Object.keys(estados), Object.values(estados), "bar", "rgba(54, 162, 235, 0.7)");
         
-        // 2. Detección de máquina
+        // Detección de máquina
         const deteccionIdx = columnMapping.deteccionIdx;
         const detecciones = {};
-        if (deteccionIdx !== undefined) {
+        if (deteccionIdx !== undefined && deteccionIdx !== -1) {
             currentRows.forEach(row => {
                 let val = (row[deteccionIdx] || "DESCONOCIDO").trim();
                 if (val === "") val = "VACÍO";
@@ -530,20 +582,34 @@
         }
         updateChart("deteccionChart", Object.keys(detecciones), Object.values(detecciones), "pie", ["#36a2eb", "#ff6384", "#ffcd56", "#4bc0c0", "#9966ff"]);
         
-        // 3. Tipificaciones consolidadas (Top 10)
-        const consolidated = getConsolidadoPrimeraNoVacia();
+        // Tipificaciones de AA - SOLO LAS QUE TIENEN DATO
+        const tipiIdx = columnMapping.tipificacionAA_idx;
         const tipiCount = {};
-        consolidated.rows.forEach(row => {
-            const tipi = row[row.length-1] || "SIN TIPIFICACIÓN";
-            if (tipi.trim() !== "") tipiCount[tipi] = (tipiCount[tipi] || 0) + 1;
-        });
-        const sorted = Object.entries(tipiCount).sort((a,b) => b[1] - a[1]).slice(0, 10);
-        updateChart("tipificacionChart", sorted.map(s => s[0].substring(0, 35)), sorted.map(s => s[1]), "bar", "rgba(255, 99, 132, 0.7)");
+        let sinTipificacion = 0;
+        if (tipiIdx !== undefined && tipiIdx !== -1) {
+            currentRows.forEach(row => {
+                let tipi = (row[tipiIdx] || "").trim();
+                if (tipi === "") {
+                    sinTipificacion++;
+                } else {
+                    tipiCount[tipi] = (tipiCount[tipi] || 0) + 1;
+                }
+            });
+        } else {
+            sinTipificacion = currentRows.length;
+        }
         
-        // 4. Operador por destino
+        const sorted = Object.entries(tipiCount).sort((a,b) => b[1] - a[1]).slice(0, 10);
+        updateChart("tipificacionChart", sorted.map(s => s[0].substring(0, 35)), sorted.map(s => s[1]), "bar", "rgba(34, 197, 94, 0.7)");
+        
+        // Gráfica de SIN Tipificación vs CON Tipificación
+        const conTipi = currentRows.length - sinTipificacion;
+        updateChart("sinTipiChart", ["✓ Con tipificación (AA con dato)", "✗ Sin tipificación (AA vacío)"], [conTipi, sinTipificacion], "pie", ["#22c55e", "#ef4444"]);
+        
+        // Operador por destino
         const destinoIdx = columnMapping.destinoIdx;
         const operadores = {};
-        if (destinoIdx !== undefined) {
+        if (destinoIdx !== undefined && destinoIdx !== -1) {
             currentRows.forEach(row => {
                 let val = (row[destinoIdx] || "").trim();
                 if (val.includes("Movistar")) val = "Movistar";
@@ -563,19 +629,28 @@
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (charts[chartId]) charts[chartId].destroy();
+        if (labels.length === 0) {
+            charts[chartId] = new Chart(ctx, {
+                type: type,
+                data: { labels: ["Sin datos"], datasets: [{ label: 'Frecuencia', data: [0], backgroundColor: "#cccccc", borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            return;
+        }
         charts[chartId] = new Chart(ctx, {
             type: type,
-            data: { labels: labels, datasets: [{ label: 'Frecuencia', data: data, backgroundColor: backgroundColor, borderWidth: 1 }] },
+            data: { labels: labels, datasets: [{ label: 'Cantidad', data: data, backgroundColor: backgroundColor, borderWidth: 1 }] },
             options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
         });
     }
     
-    // Refresh completo
-    let currentTipiLetter = "S";
+    let currentTipiFilter = "TODOS";
+    
     function refreshTipiPanel() {
         if (!currentRows.length) return;
-        const data = getTipificacionByColumn(currentTipiLetter);
-        renderTable("tipiDynamicTable", data, `No hay datos para columna ${currentTipiLetter}`);
+        updateTipiSummary();
+        const data = getTipificacionAAData(currentTipiFilter);
+        renderTable("tipiTableContainer", data, `No hay registros con dato en columna AA ${currentTipiFilter !== "TODOS" ? `con filtro "${currentTipiFilter}"` : ""}`);
         window.currentTipiData = data;
     }
     
@@ -585,28 +660,37 @@
         const arValid = getRowsAR(validRows);
         renderTable("validTableContainer", arValid, "No hay contactos válidos");
         window.validData = arValid;
+        
+        updateTipiFilter();
         refreshTipiPanel();
-        const consolidated = getConsolidadoPrimeraNoVacia();
-        renderTable("consolidadoTableContainer", consolidated, "No hay datos consolidados");
-        window.consolidatedData = consolidated;
         updateCharts();
     }
     
-    function loadCSVData(file, showMessage = true) {
+    function loadCSVData(file) {
         const reader = new FileReader();
         reader.onload = function(evt) {
-            const { headers, data } = parseCSV(evt.target.result);
-            if (!headers || data.length === 0) {
-                document.getElementById('uploadStatus').innerHTML = "❌ Error: CSV sin datos";
-                return;
+            try {
+                const { headers, data } = parseCSV(evt.target.result);
+                if (!headers || headers.length === 0 || data.length === 0) {
+                    document.getElementById('uploadStatus').innerHTML = "❌ Error: CSV sin datos válidos";
+                    document.getElementById('uploadStatus').className = "status error";
+                    return;
+                }
+                currentHeaders = headers;
+                currentRows = data;
+                buildMapping(headers);
+                document.getElementById('uploadStatus').innerHTML = `✅ ${data.length} registros cargados | ${file.name}`;
+                document.getElementById('uploadStatus').className = "status success";
+                refreshAll();
+            } catch(e) {
+                document.getElementById('uploadStatus').innerHTML = "❌ Error al procesar CSV";
+                document.getElementById('uploadStatus').className = "status error";
             }
-            currentHeaders = headers;
-            currentRows = data;
-            buildMapping(headers);
-            document.getElementById('uploadStatus').innerHTML = `✅ ${data.length} registros cargados | ${file.name}`;
-            refreshAll();
         };
-        reader.onerror = () => document.getElementById('uploadStatus').innerHTML = "❌ Error al leer archivo";
+        reader.onerror = () => {
+            document.getElementById('uploadStatus').innerHTML = "❌ Error al leer archivo";
+            document.getElementById('uploadStatus').className = "status error";
+        };
         reader.readAsText(file, "UTF-8");
     }
     
@@ -615,26 +699,33 @@
             .then(response => { if (!response.ok) throw new Error(); return response.text(); })
             .then(csvText => {
                 const { headers, data } = parseCSV(csvText);
-                if (!headers || data.length === 0) throw new Error();
+                if (!headers || headers.length === 0 || data.length === 0) throw new Error();
                 currentHeaders = headers;
                 currentRows = data;
                 buildMapping(headers);
                 document.getElementById('uploadStatus').innerHTML = `✅ Auto-cargado: ${data.length} registros desde ${DEFAULT_CSV_FILENAME}`;
+                document.getElementById('uploadStatus').className = "status success";
                 refreshAll();
             })
             .catch(() => {
                 document.getElementById('uploadStatus').innerHTML = `⚠️ No se encontró "${DEFAULT_CSV_FILENAME}". Sube un archivo manualmente.`;
+                document.getElementById('uploadStatus').className = "status";
                 renderTable("validTableContainer", { headers: [], rows: [] }, "Esperando archivo CSV...");
-                renderTable("tipiDynamicTable", { headers: [], rows: [] }, "Sube un archivo CSV");
-                renderTable("consolidadoTableContainer", { headers: [], rows: [] }, "Sube un archivo CSV");
+                renderTable("tipiTableContainer", { headers: [], rows: [] }, "Sube un archivo CSV");
             });
     }
     
-    // Eventos UI
     document.getElementById('csvFileInput').addEventListener('change', e => { if (e.target.files[0]) loadCSVData(e.target.files[0]); });
     document.getElementById('downloadValidBtn').addEventListener('click', () => { if(window.validData?.rows.length) downloadExcel(window.validData, "Contactos_Efectivos.xlsx"); else alert("Sin datos"); });
-    document.getElementById('downloadConsolidadoBtn').addEventListener('click', () => { if(window.consolidatedData?.rows.length) downloadExcel(window.consolidatedData, "Tipificacion_Consolidada.xlsx"); else alert("Sin datos"); });
-    document.getElementById('downloadTipiActualBtn').addEventListener('click', () => { if(window.currentTipiData?.rows.length) downloadExcel(window.currentTipiData, `Tipificacion_Columna_${currentTipiLetter}.xlsx`); else alert("Sin datos"); });
+    document.getElementById('downloadTipiBtn').addEventListener('click', () => { if(window.currentTipiData?.rows.length) downloadExcel(window.currentTipiData, "Tipificacion_Columna_AA.xlsx"); else alert("Sin datos"); });
+    
+    const tipiFilterSelect = document.getElementById('tipiFilterSelect');
+    if (tipiFilterSelect) {
+        tipiFilterSelect.addEventListener('change', (e) => {
+            currentTipiFilter = e.target.value;
+            refreshTipiPanel();
+        });
+    }
     
     function downloadExcel(data, filename) {
         const sheetData = [data.headers, ...data.rows];
@@ -643,8 +734,11 @@
         XLSX.writeFile(wb, filename);
     }
     
-    // Tabs principales
-    const panels = { tabValid: document.getElementById('tabValid'), tabTipi: document.getElementById('tabTipi'), tabConsolidado: document.getElementById('tabConsolidado'), tabGraficas: document.getElementById('tabGraficas') };
+    const panels = { 
+        tabValid: document.getElementById('tabValid'), 
+        tabTipi: document.getElementById('tabTipi'), 
+        tabGraficas: document.getElementById('tabGraficas') 
+    };
     document.querySelectorAll('.main-tab').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.main-tab').forEach(b => b.classList.remove('active'));
@@ -653,17 +747,10 @@
             Object.keys(panels).forEach(p => panels[p].style.display = 'none');
             if (target === 'tabValid') panels.tabValid.style.display = 'block';
             if (target === 'tabTipi') panels.tabTipi.style.display = 'block';
-            if (target === 'tabConsolidado') panels.tabConsolidado.style.display = 'block';
-            if (target === 'tabGraficas') { panels.tabGraficas.style.display = 'block'; setTimeout(() => updateCharts(), 100); }
-        });
-    });
-    
-    document.querySelectorAll('.sub-tab').forEach(btn => {
-        btn.addEventListener('click', () => {
-            currentTipiLetter = btn.getAttribute('data-tipicol');
-            document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if (currentRows.length) refreshTipiPanel();
+            if (target === 'tabGraficas') { 
+                panels.tabGraficas.style.display = 'block'; 
+                setTimeout(() => updateCharts(), 100);
+            }
         });
     });
     
