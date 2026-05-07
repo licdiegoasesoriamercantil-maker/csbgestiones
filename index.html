@@ -264,7 +264,7 @@
 
     <div class="main-tabs">
         <button class="main-tab active" data-main="tabValid">✅ Contactos Efectivos</button>
-        <button class="main-tab" data-main="tabTipi">🏷️ Tipificaciones (Columna AA)</button>
+        <button class="main-tab" data-main="tabTipi">🏷️ Tipificaciones</button>
         <button class="main-tab" data-main="tabGraficas">📊 Gráficas Estadísticas</button>
     </div>
 
@@ -512,8 +512,8 @@
         if (summaryDiv) {
             summaryDiv.innerHTML = `
                 <span>📊 Total registros: <span>${stats.total}</span></span>
-                <span>✅ Con tipificación<span style="color:#166534;">${stats.conDato}</span></span>
-                <span>⚠️ Sin tipificación<span style="color:#b91c1c;">${stats.sinDato}</span></span>
+                <span>✅ Con tipificación: <span style="color:#166534;">${stats.conDato}</span></span>
+                <span>⚠️ Sin tipificación: <span style="color:#b91c1c;">${stats.sinDato}</span></span>
                 <span>📌 Mostrando solo ${stats.conDato} tipificaciones</span>
             `;
         }
