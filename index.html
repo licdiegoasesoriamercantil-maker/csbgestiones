@@ -284,7 +284,7 @@
         📊 Dashboard de Análisis de Llamadas
         <span class="stats-badge" id="autoLoadBadge">🔄 Auto-carga activa</span>
     </h1>
-    <div class="sub">Reportes por tipificación | Gráficas interactivas | Exportación a Excel</div>
+    
 
     <div class="upload-card">
         <label class="file-label">
@@ -299,21 +299,18 @@
         </div>
         
         <div id="uploadStatus" class="status">⏳ Intentando auto-cargar datos.csv...</div>
-        <div style="margin-top: 12px; font-size: 0.75rem; color: #64748b;">
-            💡 Si tu archivo está en la misma carpeta que este HTML, se cargará automáticamente.<br>
-            💡 También puedes cambiar el nombre del archivo y hacer clic en "Cargar archivo".
-        </div>
+      
     </div>
 
     <div class="main-tabs">
         <button class="main-tab active" data-main="tabValid">✅ Contactos Efectivos</button>
-        <button class="main-tab" data-main="tabTipi">🏷️ Tipificaciones (Columna AA)</button>
+        <button class="main-tab" data-main="tabTipi">🏷️ Tipificaciones</button>
         <button class="main-tab" data-main="tabGraficas">📊 Gráficas Estadísticas</button>
     </div>
 
     <div id="tabValid" class="report-section">
         <div class="section-header">
-            <h2>✅ Contactos Efectivos <span style="font-size:0.8rem;">(Agente vacío + ANSWER + PERSON)</span></h2>
+            <h2>✅ Contactos Efectivos sin gestor<span style="font-size:0.8rem;"></span></h2>
             <button id="downloadValidBtn" class="download-btn">⬇️ Exportar Excel</button>
         </div>
         <div class="table-wrapper" id="validTableContainer">
@@ -323,7 +320,7 @@
 
     <div id="tabTipi" class="report-section" style="display:none;">
         <div class="section-header">
-            <h2>📌 Tipificaciones - Columna AA (Solo registros con dato en AA)</h2>
+            <h2>📌 Tipificaciones</h2>
             <button id="downloadTipiBtn" class="download-btn">⬇️ Exportar Excel</button>
         </div>
         <div class="stats-summary" id="tipiSummary">
@@ -336,7 +333,7 @@
             </select>
         </div>
         <div class="table-wrapper" id="tipiTableContainer">
-            <div class="info-note">Cargando datos de columna AA...</div>
+            <div class="info-note">Cargando datos...</div>
         </div>
     </div>
 
@@ -357,22 +354,16 @@
                 <h3>🏷️ Tipificaciones (AA con datos) - Top 10</h3>
                 <canvas id="tipificacionChart"></canvas>
             </div>
-            <div class="chart-card">
-                <h3>⚠️ Registros SIN Tipificación (AA vacío)</h3>
-                <canvas id="sinTipiChart"></canvas>
-            </div>
+            
             <div class="chart-card">
                 <h3>📱 Operador por Destino</h3>
                 <canvas id="operadorChart"></canvas>
             </div>
         </div>
-        <div class="info-note">
-            📌 Las gráficas se actualizan automáticamente con los datos del CSV cargado.<br>
-            📌 "SIN Tipificación" muestra registros donde la columna AA está vacía o sin dato.
-        </div>
+       
     </div>
 
-    <footer>Reportes desde columna A hasta R | Gráficas interactivas con Chart.js</footer>
+    
 </div>
 
 <script>
